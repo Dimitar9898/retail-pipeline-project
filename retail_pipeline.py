@@ -48,3 +48,12 @@ df_exploded = df_exploded.drop(columns=['shopping_cart'])
 
 print(df_exploded.shape)
 print(df_exploded.head(10))
+
+
+df_exploded['quantity'] = pd.to_numeric(df_exploded['quantity'], errors='coerce')
+
+pythonprint(df_exploded['quantity'].describe())  # catch negative/zero/absurd values
+print(df_exploded['product_name'].nunique())
+print(df_exploded.isnull().sum())  # nulls can appear post-explode if shopping_
+
+df_exploded = df_exploded.reset_index(drop=True)
