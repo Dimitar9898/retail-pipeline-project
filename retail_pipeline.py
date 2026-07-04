@@ -52,8 +52,25 @@ print(df_exploded.head(10))
 
 df_exploded['quantity'] = pd.to_numeric(df_exploded['quantity'], errors='coerce')
 
-pythonprint(df_exploded['quantity'].describe())  # catch negative/zero/absurd values
+
+# ==========================================================
+# VALIDATE EXPLODED DATA
+# ==========================================================
+
+print(df_exploded['quantity'].describe())          # catch negative/zero/absurd values
 print(df_exploded['product_name'].nunique())
-print(df_exploded.isnull().sum())  # nulls can appear post-explode if shopping_
+print(df_exploded.isnull().sum())                  # nulls can appear post-explode
+
+# ==========================================================
+# RESET INDEX
+# ==========================================================
 
 df_exploded = df_exploded.reset_index(drop=True)
+
+# ==========================================================
+# SAVE CLEANED OUTPUT
+# ==========================================================
+
+df_exploded.to_csv(r'C:\Users\dimit\Documents\retail_pipeline_project\cleaned_data.csv', index=False)
+
+print("Saved cleaned_data.csv:", df_exploded.shape)
