@@ -20,7 +20,7 @@ print(df['shopping_cart'].head(5))
 # ==========================================================
 
 # Fix date column from string to proper date type
-df['date'] = pd.to_datetime(df['date'])
+df['date'] = pd.to_datetime(df['date'], format='mixed', dayfirst=False)
 
 # Fill the one missing review
 df['latest_customer_review'] = df['latest_customer_review'].fillna('No review')
@@ -35,6 +35,13 @@ df = df.drop_duplicates()
 # shopping_cart is stored as a string representation of a list of tuples
 # ast.literal_eval safely converts it back to an actual Python list
 df['shopping_cart'] = df['shopping_cart'].apply(ast.literal_eval)
+
+# Check for empty carts before exploding — these break tuple unpacking
+empty_carts = df[df['shopping_cart'].apply(lambda x: len(x) == 0)]
+print("Empty cart rows:", empty_carts.shape[0])
+
+if empty_carts.shape[0] > 0:
+    df = df[df['shopping_cart'].apply(lambda x: len(x) > 0)]
 
 # Explode into one row per product per order
 df_exploded = df.explode('shopping_cart')
@@ -61,6 +68,13 @@ print(df_exploded['quantity'].describe())          # catch negative/zero/absurd 
 print(df_exploded['product_name'].nunique())
 print(df_exploded.isnull().sum())                  # nulls can appear post-explode
 
+
+# Flag any invalid quantities (zero or negative doesn't make sense for an order)
+invalid_qty = df_exploded[df_exploded['quantity'] <= 0]
+print("Invalid quantity rows (<=0):", invalid_qty.shape[0])
+
+if invalid_qty.shape[0] > 0:
+    df_exploded = df_exploded[df_exploded['quantity'] > 0]
 # ==========================================================
 # RESET INDEX
 # ==========================================================
