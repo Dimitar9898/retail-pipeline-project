@@ -86,5 +86,5 @@ df_exploded = df_exploded.reset_index(drop=True)
 # ==========================================================
 
 df_exploded.to_csv(r'C:\Users\dimit\Documents\retail_pipeline_project\cleaned_data.csv', index=False)
-
+print(f"Original rows: {df.shape[0]}, Exploded rows: {df_exploded.shape[0]}")
 print("Saved cleaned_data.csv:", df_exploded.shape)
