@@ -28,15 +28,23 @@ df['latest_customer_review'] = df['latest_customer_review'].fillna('No review')
 # Drop full duplicate rows (if any)
 df = df.drop_duplicates()
 
+# Standardize warehouse name — title case
+df['nearest_warehouse'] = df['nearest_warehouse'].str.title()
+
 # ==========================================================
 # PARSE SHOPPING CART
 # ==========================================================
 
 # shopping_cart is stored as a string representation of a list of tuples
 # ast.literal_eval safely converts it back to an actual Python list
-df['shopping_cart'] = df['shopping_cart'].apply(ast.literal_eval)
+# Title case applied to product names during parsing
+def clean_cart(cart_str):
+    cart = ast.literal_eval(cart_str)
+    return [(product.title(), qty) for product, qty in cart]
 
-# Check for empty carts before exploding — these break tuple unpacking
+df['shopping_cart'] = df['shopping_cart'].apply(clean_cart)
+
+# Check for empty carts before exploding
 empty_carts = df[df['shopping_cart'].apply(lambda x: len(x) == 0)]
 print("Empty cart rows:", empty_carts.shape[0])
 
@@ -56,25 +64,22 @@ df_exploded = df_exploded.drop(columns=['shopping_cart'])
 print(df_exploded.shape)
 print(df_exploded.head(10))
 
-
 df_exploded['quantity'] = pd.to_numeric(df_exploded['quantity'], errors='coerce')
-
 
 # ==========================================================
 # VALIDATE EXPLODED DATA
 # ==========================================================
 
-print(df_exploded['quantity'].describe())          # catch negative/zero/absurd values
+print(df_exploded['quantity'].describe())
 print(df_exploded['product_name'].nunique())
-print(df_exploded.isnull().sum())                  # nulls can appear post-explode
+print(df_exploded.isnull().sum())
 
-
-# Flag any invalid quantities (zero or negative doesn't make sense for an order)
 invalid_qty = df_exploded[df_exploded['quantity'] <= 0]
 print("Invalid quantity rows (<=0):", invalid_qty.shape[0])
 
 if invalid_qty.shape[0] > 0:
     df_exploded = df_exploded[df_exploded['quantity'] > 0]
+
 # ==========================================================
 # RESET INDEX
 # ==========================================================
