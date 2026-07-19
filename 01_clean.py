@@ -77,6 +77,13 @@ print(df_exploded.isnull().sum())
 invalid_qty = df_exploded[df_exploded['quantity'] <= 0]
 print("Invalid quantity rows (<=0):", invalid_qty.shape[0])
 
+product_name_map = {
+    'Istream': 'iStream',
+    'Peartv': 'pearTV',
+    'Iassist Line': 'iAssist Line',
+}
+df_exploded['product_name'] = df_exploded['product_name'].replace(product_name_map)
+
 if invalid_qty.shape[0] > 0:
     df_exploded = df_exploded[df_exploded['quantity'] > 0]
 
