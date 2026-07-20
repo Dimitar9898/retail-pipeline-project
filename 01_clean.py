@@ -20,6 +20,8 @@ print(df['shopping_cart'].head(5))
 # ==========================================================
 
 # Fix date column from string to proper date type
+# format mixed means not all same format some can be YYYY-MM-DD and some can be MM/DD/YYYY
+# day first is for 01/02/2023 to be interpreted as january not february, so month first 
 df['date'] = pd.to_datetime(df['date'], format='mixed', dayfirst=False)
 
 # Fill the one missing review
@@ -35,11 +37,9 @@ df['nearest_warehouse'] = df['nearest_warehouse'].str.title()
 # PARSE SHOPPING CART
 # ==========================================================
 
-# shopping_cart is stored as a string representation of a list of tuples
-# ast.literal_eval safely converts it back to an actual Python list
-# Title case applied to product names during parsing
-def clean_cart(cart_str):
-    cart = ast.literal_eval(cart_str)
+# converts from string to list of tuples, to loop over and access each product and quantity
+def clean_cart(shopping_cart_str):
+    cart = ast.literal_eval(shopping_cart_str)
     return [(product.title(), qty) for product, qty in cart]
 
 df['shopping_cart'] = df['shopping_cart'].apply(clean_cart)
@@ -82,7 +82,13 @@ product_name_map = {
     'Peartv': 'pearTV',
     'Iassist Line': 'iAssist Line',
 }
+
+
+
 df_exploded['product_name'] = df_exploded['product_name'].replace(product_name_map)
+
+for name in sorted(df_exploded['product_name'].unique()):
+    print(name)
 
 if invalid_qty.shape[0] > 0:
     df_exploded = df_exploded[df_exploded['quantity'] > 0]
