@@ -117,26 +117,29 @@ date_map = dict(cur.fetchall())
 
 
 # ==========================================================
-# LOAD FACT_ORDER_ITEMS
+# LOAD FACT_ORDERS  (one row per order)
 # ==========================================================
 
-for _, row in df.iterrows():
+orders = df.groupby('order_id').first().reset_index()
+
+order_key_map = {}
+
+for _, row in orders.iterrows():
     cur.execute("""
-        INSERT INTO fact_order_items (
-            order_id, customer_key, product_key, warehouse_key, date_key,
-            quantity, order_price, delivery_charges, coupon_discount,
-            order_total, distance_to_nearest_warehouse,
-            is_expedited_delivery, is_happy_customer, latest_customer_review
+        INSERT INTO fact_orders (
+            order_id, customer_key, warehouse_key, date_key,
+            delivery_charges, coupon_discount, order_total,
+            distance_to_nearest_warehouse, is_expedited_delivery,
+            is_happy_customer, latest_customer_review
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (order_id) DO NOTHING
+        RETURNING order_key
     """, (
         row['order_id'],
         customer_map[row['customer_id']],
-        product_map[row['product_name']],
         warehouse_map[row['nearest_warehouse']],
         date_map[row['date'].date()],
-        row['quantity'],
-        row['order_price'],
         row['delivery_charges'],
         row['coupon_discount'],
         row['order_total'],
@@ -144,6 +147,34 @@ for _, row in df.iterrows():
         row['is_expedited_delivery'],
         row['is_happy_customer'],
         row['latest_customer_review']
+    ))
+    result = cur.fetchone()
+    if result:
+        order_key_map[row['order_id']] = result[0]
+
+conn.commit()
+print(f"Loaded fact_orders: {len(order_key_map)} orders")
+
+# In case some orders already existed (ON CONFLICT skipped), fetch any missing keys
+cur.execute("SELECT order_id, order_key FROM fact_orders")
+order_key_map = dict(cur.fetchall())
+
+
+# ==========================================================
+# LOAD FACT_ORDER_ITEMS  (one row per product line)
+# ==========================================================
+
+for _, row in df.iterrows():
+    cur.execute("""
+        INSERT INTO fact_order_items (
+            order_key, product_key, quantity, order_price
+        )
+        VALUES (%s, %s, %s, %s)
+    """, (
+        order_key_map[row['order_id']],
+        product_map[row['product_name']],
+        row['quantity'],
+        row['order_price']
     ))
 
 conn.commit()

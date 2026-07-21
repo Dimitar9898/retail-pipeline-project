@@ -34,6 +34,26 @@ df = df.drop_duplicates()
 df['nearest_warehouse'] = df['nearest_warehouse'].str.title()
 
 # ==========================================================
+# VALIDATE ORDER_TOTAL
+# ==========================================================
+
+# order_total should equal order_price * (1 - discount%) + delivery_charges
+# Rows where this deviates by more than 1% indicate corrupted source data and are removed
+df['expected_total'] = round(
+    df['order_price'] * (1 - df['coupon_discount'] / 100) + df['delivery_charges'], 2
+)
+
+df['pct_diff'] = abs(df['order_total'] - df['expected_total']) / df['expected_total'].replace(0, pd.NA)
+
+bad_orders = df[df['pct_diff'] > 0.01]
+
+print(f"Removing {bad_orders.shape[0]} orders with inconsistent order_total")
+print(bad_orders[['order_id', 'order_price', 'coupon_discount', 'delivery_charges', 'order_total', 'expected_total', 'pct_diff']])
+
+df = df[df['pct_diff'] <= 0.01]
+df = df.drop(columns=['expected_total', 'pct_diff'])
+
+# ==========================================================
 # PARSE SHOPPING CART
 # ==========================================================
 
