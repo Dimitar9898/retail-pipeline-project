@@ -87,9 +87,8 @@ product_name_map = {
 
 df_exploded['product_name'] = df_exploded['product_name'].replace(product_name_map)
 
-for name in sorted(df_exploded['product_name'].unique()):
-    print(name)
 
+#to check for invalid quantities 
 if invalid_qty.shape[0] > 0:
     df_exploded = df_exploded[df_exploded['quantity'] > 0]
 
@@ -97,6 +96,7 @@ if invalid_qty.shape[0] > 0:
 # RESET INDEX
 # ==========================================================
 
+# Reset index after all cleaning and exploding as after exploding the index can be messy and not sequential, which can cause issues when saving or further processing the data. Resetting the index ensures that the DataFrame has a clean, sequential index.
 df_exploded = df_exploded.reset_index(drop=True)
 
 # ==========================================================
